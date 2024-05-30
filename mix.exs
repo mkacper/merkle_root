@@ -13,7 +13,7 @@ defmodule MerkleRoot.MixProject do
   end
 
   def escript() do
-    [main_module: MerkleRoot]
+    [main_module: MerkleRoot, embed_elixir: true, shebang: "#!/usr/local/bin/escript"]
   end
 
   def application do
