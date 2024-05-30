@@ -1,41 +1,43 @@
 defmodule MerkleTree do
-  def root_btc(txs) do
-    txs = Enum.map(txs, &(&1 |> decode_hex() |> change_endianness()))
-    calculate_root(txs, []) 
+
+  # API
+
+  def root_btc(txs), do: calculate_root(txs, _level_hashes = [], _height = 0) 
+
+  # Internal
+
+  defp calculate_root([], [root], _height),
+    do: root |> reverse_bytes() |> encode_hex()
+
+  defp calculate_root([], hashes, height) do
+    hashes
+    |> Enum.reverse()
+    |> calculate_root([], height + 1)
   end
 
-  defp calculate_root([h1], []), do: :DUPA
-  defp calculate_root([], [root]), do: root |> change_endianness() |> encode_hex() |> String.downcase()
+  defp calculate_root([h1], hashes, height), do: calculate_root([h1, h1], hashes, height)
 
-  defp calculate_root([], hashes) do
-    hashes_reversed = Enum.reverse(hashes)
-    calculate_root(hashes_reversed, [])
+  defp calculate_root([h1 | [h2 | rest]], hashes, height = 0) do
+    h1_bin = h1 |> decode_hex() |> reverse_bytes()
+    h2_bin = h2 |> decode_hex() |> reverse_bytes()
+    calculate_root(rest, [dhash(h1_bin <> h2_bin) | hashes], height)
   end
 
-  defp calculate_root([h1], hashes), do: calculate_root([h1, h1], hashes)
+  defp calculate_root([h1 | [h2 | rest]], hashes, height),
+    do: calculate_root(rest, [dhash(h1 <> h2) | hashes], height)
 
-  defp calculate_root([h1 | [h2 | rest]], hashes) do
-    h1_bin = h1
-    h2_bin = h2
-    hash = (h1_bin <> h2_bin) |> dhash()
-    calculate_root(rest, [hash | hashes])
+  defp decode_hex(bin), do: :binary.decode_hex(bin)
+
+  defp encode_hex(bin), do: bin |> :binary.encode_hex() |> String.downcase()
+
+  defp reverse_bytes(bin) do
+    bin
+    |> :binary.bin_to_list()
+    |> Enum.reverse()
+    |> :binary.list_to_bin()
   end
 
-  def decode_hex(bin), do: :binary.decode_hex(bin)
+  defp dhash(bin), do: bin |> hash() |> hash() 
 
-  def encode_hex(bin), do: :binary.encode_hex(bin)
-
-  def change_endianness(bin) do
-    l = :binary.bin_to_list(bin)
-    r = Enum.reverse(l)
-    :binary.list_to_bin(r)
-  end
-
-  #def change_endianness(bin) do
-  #  bin
-  #  |> :binary.decode_unsigned(:little)
-  #  |> :binary.encode_unsigned()
-  #end
-
-  defp dhash(bin), do: :sha256 |> :crypto.hash(bin) |> then(&:crypto.hash(:sha256, &1)) 
+  defp hash(bin), do: :crypto.hash(:sha256, bin)
 end
