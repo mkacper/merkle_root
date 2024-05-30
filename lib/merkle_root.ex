@@ -1,10 +1,31 @@
-defmodule MerkleTree do
+defmodule MerkleRoot do
+  @moduledoc """
+  Documentation for `MerkleRoot`.
+  """
+  def main(args) do
+    opts = parse_options(args)
+    path_to_file = Keyword.fetch!(opts, :input)
+    blockchain_type = Keyword.get(opts, :type, "btc")
+    txs = path_to_file |> File.read!() |> String.split()
 
-  # API
+    case blockchain_type do
+      "btc" ->
+        root = root_btc(txs)
+        IO.puts("MERKLE TREE ROOT IS #{root}")
 
-  def root_btc(txs), do: calculate_root(txs, _level_hashes = [], _height = 0) 
+      _other ->
+        raise "Blockchain not supported!"
+    end
+  end
 
   # Internal
+
+  defp parse_options(args) do
+    {opts, _, _} = OptionParser.parse(args, strict: [input: :string, type: :string])
+    opts
+  end
+
+  defp root_btc(txs), do: calculate_root(txs, _level_hashes = [], _height = 0) 
 
   defp calculate_root([], [root], _height),
     do: root |> reverse_bytes() |> encode_hex()
