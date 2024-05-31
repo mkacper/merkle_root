@@ -24,8 +24,7 @@ defmodule MerkleRoot do
 
     with {:input, input} when not is_nil(input) <- {:input, Keyword.get(opts, :input)},
          {:type, type} <- {:type, Keyword.get(opts, :type, "btc")},
-         {:file, {:ok, txs_blob}} <- {:file, File.read(input)},
-         txs <- String.split(txs_blob),
+         {:file, {:ok, txs}} <- {:file, read_txs_from_file(input)},
          {:ok, root} <- root(txs, type) do
       IO.puts("MERKLE TREE ROOT IS #{root}")
     else
@@ -94,6 +93,12 @@ defmodule MerkleRoot do
   defp parse_options(args) do
     {opts, _, _} = OptionParser.parse(args, strict: [input: :string, type: :string])
     opts
+  end
+
+  defp read_txs_from_file(path) do
+    with {:ok, blob} <- File.read(path) do
+      {:ok, String.split(blob)}
+    end
   end
 
   defp decode_hex(bin), do: :binary.decode_hex(bin)

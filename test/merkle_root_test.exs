@@ -16,11 +16,14 @@ defmodule MerkleRootTest do
     btc_blocks_json: blocks_json
   } do
     assert Enum.all?(blocks_json, fn %{"mrkl_root" => root_hash, "tx" => txs} ->
+             # given
              path = save_txs_to_tmp_file(txs)
+             opts = opts(path, "btc")
 
-             capture_io(fn -> path |> opts("btc") |> MerkleRoot.main() end) ==
-               "MERKLE TREE ROOT IS #{root_hash}\n"
+             # when and then
+             capture_io(fn -> MerkleRoot.main(opts) end) == "MERKLE TREE ROOT IS #{root_hash}\n"
 
+             # cleanup
              File.rm!(path)
            end)
   end
@@ -28,27 +31,39 @@ defmodule MerkleRootTest do
   test "calculates the merkle tree root correctly for BTC for a single transation", %{
     btc_blocks_json: blocks_json
   } do
+    # given
     [%{"tx" => [tx | _]} | _] = blocks_json
     path = save_txs_to_tmp_file([tx])
+    opts = opts(path, "btc")
 
-    assert capture_io(fn -> path |> opts("btc") |> MerkleRoot.main() end) ==
-             "MERKLE TREE ROOT IS #{tx["hash"]}\n"
+    # when and then
+    assert capture_io(fn -> MerkleRoot.main(opts) end) == "MERKLE TREE ROOT IS #{tx["hash"]}\n"
 
+    # cleanup
     File.rm!(path)
   end
 
   test "calculates the merkle tree root for `basic` transations", %{basic_txs: txs} do
+    # given
     path = save_txs_to_tmp_file(txs)
-    capture_io(fn -> path |> opts("basic") |> MerkleRoot.main() end) =~ "MERKLE TREE ROOT IS "
+    opts = opts(path, "basic")
+
+    # when and then
+    assert capture_io(fn -> MerkleRoot.main(opts) end) =~ "MERKLE TREE ROOT IS "
+
+    # cleanup
     File.rm!(path)
   end
 
   test "calculates the merkle tree root for a single `basic` transations", %{basic_txs: [tx | _]} do
+    # given
     path = save_txs_to_tmp_file([tx])
+    opts = opts(path, "basic")
 
-    capture_io(fn -> path |> opts("basic") |> MerkleRoot.main() end) =~
-      "MERKLE TREE ROOT IS #{tx}\n"
+    # when and then
+    capture_io(fn -> MerkleRoot.main(opts) end) =~ "MERKLE TREE ROOT IS #{tx}\n"
 
+    # cleanup
     File.rm!(path)
   end
 
@@ -57,25 +72,34 @@ defmodule MerkleRootTest do
   end
 
   test "return erros if `--input` option points to non-existing file" do
-    assert capture_io(fn -> "non/existing/path" |> opts("btc") |> MerkleRoot.main() end) ==
-             "cannot read the file reason: :enoent\n"
+    # given
+    opts = opts("non/existing/path", "btc")
+
+    # when and then
+    assert capture_io(fn -> MerkleRoot.main(opts) end) == "cannot read the file reason: :enoent\n"
   end
 
   test "return erros if `--type` option points to not supported type" do
-    path = save_txs_to_tmp_file([%{"hash" => "hash"}])
+    # given
+    path = save_txs_to_tmp_file(["hash"])
+    opts = opts(path, "not-supported")
 
-    assert capture_io(fn -> path |> opts("non-supported") |> MerkleRoot.main() end) ==
-             "blockchain type not supported\n"
+    # when and then
+    assert capture_io(fn -> MerkleRoot.main(opts) end) == "blockchain type not supported\n"
 
+    # cleanup
     File.rm!(path)
   end
 
   test "return erros if bad input file" do
-    path = save_txs_to_tmp_file([%{"hash" => :crypto.strong_rand_bytes(256)}])
+    # given
+    path = save_txs_to_tmp_file([:crypto.strong_rand_bytes(256)])
+    opts = opts(path, "btc")
 
-    assert capture_io(fn -> path |> opts("btc") |> MerkleRoot.main() end) =~
-             "unexpected error reason:"
+    # when and then
+    assert capture_io(fn -> MerkleRoot.main(opts) end) =~ "unexpected error reason:"
 
+    # cleanup
     File.rm!(path)
   end
 
