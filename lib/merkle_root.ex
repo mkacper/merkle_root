@@ -27,9 +27,10 @@ defmodule MerkleRoot do
       IO.puts("unexpected error reason: #{inspect(reason)}")
   end
 
-  # Internal
+  # Internals
 
   defp root(txs, "btc"), do: {:ok, root_btc(txs)}
+  defp root(txs, "basic"), do: {:ok, root_basic(txs)}
   defp root(_txs, _type), do: {:error, :not_supported}
 
   defp parse_options(args) do
@@ -38,31 +39,53 @@ defmodule MerkleRoot do
   end
 
   defp root_btc([tx]), do: tx
-  defp root_btc(txs), do: calculate_root(txs, _level_hashes = [], _height = 0)
 
-  defp calculate_root([], [root], _height),
-    do: root |> reverse_bytes() |> encode_hex()
+  defp root_btc(txs),
+    do:
+      calculate_root(txs, _level_hashes = [], _height = 0,
+        hash_fun: &dhash(&1),
+        reverse_byte_order?: true
+      )
 
-  defp calculate_root([], hashes, height) do
+  defp root_basic([tx]), do: tx
+
+  defp root_basic(txs),
+    do:
+      calculate_root(txs, _level_hashes = [], _height = 0,
+        hash_fun: &hash(&1),
+        reverse_byte_order?: false
+      )
+
+  defp calculate_root([], [root], _height, opts),
+    do: root |> maybe_reverse_bytes(opts) |> encode_hex()
+
+  defp calculate_root([], hashes, height, opts) do
     hashes
     |> Enum.reverse()
-    |> calculate_root([], height + 1)
+    |> calculate_root([], height + 1, opts)
   end
 
-  defp calculate_root([h1], hashes, height), do: calculate_root([h1, h1], hashes, height)
+  defp calculate_root([h1], hashes, height, opts),
+    do: calculate_root([h1, h1], hashes, height, opts)
 
-  defp calculate_root([h1 | [h2 | rest]], hashes, height = 0) do
-    h1_bin = h1 |> decode_hex() |> reverse_bytes()
-    h2_bin = h2 |> decode_hex() |> reverse_bytes()
-    calculate_root(rest, [dhash(h1_bin <> h2_bin) | hashes], height)
+  defp calculate_root([h1 | [h2 | rest]], hashes, height = 0, opts) do
+    h1_bin = h1 |> decode_hex() |> maybe_reverse_bytes(opts)
+    h2_bin = h2 |> decode_hex() |> maybe_reverse_bytes(opts)
+    calculate_root(rest, [opts[:hash_fun].(h1_bin <> h2_bin) | hashes], height, opts)
   end
 
-  defp calculate_root([h1 | [h2 | rest]], hashes, height),
-    do: calculate_root(rest, [dhash(h1 <> h2) | hashes], height)
+  defp calculate_root([h1 | [h2 | rest]], hashes, height, opts),
+    do: calculate_root(rest, [opts[:hash_fun].(h1 <> h2) | hashes], height, opts)
+
+  # Utils
 
   defp decode_hex(bin), do: :binary.decode_hex(bin)
 
   defp encode_hex(bin), do: bin |> :binary.encode_hex() |> String.downcase()
+
+  defp maybe_reverse_bytes(bytes, opts) do
+    (opts[:reverse_byte_order?] && reverse_bytes(bytes)) || bytes
+  end
 
   defp reverse_bytes(bin) do
     bin
