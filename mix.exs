@@ -13,7 +13,13 @@ defmodule MerkleRoot.MixProject do
   end
 
   def escript() do
-    [main_module: MerkleRoot, embed_elixir: true, shebang: "#!/usr/local/bin/escript"]
+    opts = [main_module: MerkleRoot]
+
+    if Mix.env() == :prod do
+      [{:shebang, "#!/usr/local/bin/escript"} | opts]
+    else
+      opts
+    end
   end
 
   def application do
@@ -23,6 +29,8 @@ defmodule MerkleRoot.MixProject do
   end
 
   defp deps do
-    []
+    [
+      {:jason, "~> 1.4", only: :test}
+    ]
   end
 end
