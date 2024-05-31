@@ -4,14 +4,14 @@ defmodule MerkleRoot do
 
   Intended be run as an escript or elixir script. Available flags:
    - `--input` - required; path to the input text file that contains ordered
-  hex-encoded hashes of transations, one per line.
+  hex-encoded hashes of transactions, one per line.
   - `--type` - optional; default `btc`; type of blockchain for which the Merkle
-  Tree root should be calculated, suported options are `btc` or `basic`.
+  Tree root should be calculated, supported options are `btc` or `basic`.
 
-  For `btc` type transation hashes bytes are reverted and double sha256 hashing
+  For `btc` type transaction hashes bytes are reverted and double sha256 hashing
   is used.
 
-  For `basic` type no bytes reversion is applied and single sha256 hasing is used.
+  For `basic` type no bytes reversion is applied and single sha256 hashing is used.
   """
 
   @doc """
