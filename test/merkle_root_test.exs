@@ -49,6 +49,8 @@ defmodule MerkleRootTest do
 
     assert capture_io(fn -> path |> opts("non-supported") |> MerkleRoot.main() end) ==
              "blockchain type not supported\n"
+
+    File.rm!(path)
   end
 
   test "return erros if bad input file" do
@@ -56,6 +58,8 @@ defmodule MerkleRootTest do
 
     assert capture_io(fn -> path |> opts("btc") |> MerkleRoot.main() end) =~
              "unexpected error reason:"
+
+    File.rm!(path)
   end
 
   # Helpers
