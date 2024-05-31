@@ -4,28 +4,41 @@ defmodule MerkleRoot do
   """
   def main(args) do
     opts = parse_options(args)
-    path_to_file = Keyword.fetch!(opts, :input)
-    blockchain_type = Keyword.get(opts, :type, "btc")
-    txs = path_to_file |> File.read!() |> String.split()
 
-    case blockchain_type do
-      "btc" ->
-        root = root_btc(txs)
-        IO.puts("MERKLE TREE ROOT IS #{root}")
+    with {:input, input} when not is_nil(input) <- {:input, Keyword.get(opts, :input)},
+         {:type, type} <- {:type, Keyword.get(opts, :type, "btc")},
+         {:file, {:ok, txs_blob}} <- {:file, File.read(input)},
+         txs <- String.split(txs_blob),
+         {:ok, root} <- root(txs, type) do
+      IO.puts("MERKLE TREE ROOT IS #{root}")
+    else
+      {:input, nil} ->
+        IO.puts("`--input` option is missing")
 
-      _other ->
-        raise "Blockchain not supported!"
+      {:file, {:error, reason}} ->
+        IO.puts("cannot read the file reason: #{inspect(reason)}")
+
+      {:error, :not_supported} ->
+        IO.puts("blockchain type not supported")
     end
+  rescue
+    error ->
+      reason = Exception.format(:error, error, __STACKTRACE__)
+      IO.puts("unexpected error reason: #{inspect(reason)}")
   end
 
   # Internal
+
+  defp root(txs, "btc"), do: {:ok, root_btc(txs)}
+  defp root(_txs, _type), do: {:error, :not_supported}
 
   defp parse_options(args) do
     {opts, _, _} = OptionParser.parse(args, strict: [input: :string, type: :string])
     opts
   end
 
-  defp root_btc(txs), do: calculate_root(txs, _level_hashes = [], _height = 0) 
+  defp root_btc([tx]), do: tx
+  defp root_btc(txs), do: calculate_root(txs, _level_hashes = [], _height = 0)
 
   defp calculate_root([], [root], _height),
     do: root |> reverse_bytes() |> encode_hex()
@@ -58,7 +71,7 @@ defmodule MerkleRoot do
     |> :binary.list_to_bin()
   end
 
-  defp dhash(bin), do: bin |> hash() |> hash() 
+  defp dhash(bin), do: bin |> hash() |> hash()
 
   defp hash(bin), do: :crypto.hash(:sha256, bin)
 end
