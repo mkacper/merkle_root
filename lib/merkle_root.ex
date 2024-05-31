@@ -1,6 +1,23 @@
 defmodule MerkleRoot do
   @moduledoc """
-  Documentation for `MerkleRoot`.
+  Program for calculating Merkle Tree root for a set of transations.
+
+  Intended be run as an escript or elixir script. Available flags:
+   - `--input` - required; path to the input text file that contains ordered
+  hex-encoded hashes of transations, one per line.
+  - `--type` - optional; default `btc`; type of blockchain for which the Merkle
+  Tree root should be calculated, suported options are `btc` or `basic`.
+
+  For `btc` type transation hashes bytes are reverted and double sha256 hashing
+  is used.
+
+  For `basic` type no bytes reversion is applied and single sha256 hasing is used.
+  """
+
+  @doc """
+  The entry point function to be called from an escript or elixir script (.exs).
+  Requires passing command line arguments in the form of `["arg1", "val1"]`.
+  See moduledoc for supported arguments.
   """
   def main(args) do
     opts = parse_options(args)
@@ -32,11 +49,6 @@ defmodule MerkleRoot do
   defp root(txs, "btc"), do: {:ok, root_btc(txs)}
   defp root(txs, "basic"), do: {:ok, root_basic(txs)}
   defp root(_txs, _type), do: {:error, :not_supported}
-
-  defp parse_options(args) do
-    {opts, _, _} = OptionParser.parse(args, strict: [input: :string, type: :string])
-    opts
-  end
 
   defp root_btc([tx]), do: tx
 
@@ -78,6 +90,11 @@ defmodule MerkleRoot do
     do: calculate_root(rest, [opts[:hash_fun].(h1 <> h2) | hashes], height, opts)
 
   # Utils
+
+  defp parse_options(args) do
+    {opts, _, _} = OptionParser.parse(args, strict: [input: :string, type: :string])
+    opts
+  end
 
   defp decode_hex(bin), do: :binary.decode_hex(bin)
 
