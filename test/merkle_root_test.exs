@@ -28,7 +28,7 @@ defmodule MerkleRootTest do
            end)
   end
 
-  test "calculates the merkle tree root correctly for BTC for a single transation", %{
+  test "calculates the merkle tree root correctly for a single BTC transation", %{
     btc_blocks_json: blocks_json
   } do
     # given
@@ -55,7 +55,7 @@ defmodule MerkleRootTest do
     File.rm!(path)
   end
 
-  test "calculates the merkle tree root for a single `basic` transations", %{basic_txs: [tx | _]} do
+  test "calculates the merkle tree root for a single `basic` transation", %{basic_txs: [tx | _]} do
     # given
     path = save_txs_to_tmp_file([tx])
     opts = opts(path, "basic")
@@ -67,11 +67,11 @@ defmodule MerkleRootTest do
     File.rm!(path)
   end
 
-  test "return erros if `--input` option is missed" do
+  test "return error if `--input` option is missing" do
     assert capture_io(fn -> MerkleRoot.main([]) end) == "`--input` option is missing\n"
   end
 
-  test "return erros if `--input` option points to non-existing file" do
+  test "return error if `--input` option points to non-existing file" do
     # given
     opts = opts("non/existing/path", "btc")
 
@@ -79,7 +79,7 @@ defmodule MerkleRootTest do
     assert capture_io(fn -> MerkleRoot.main(opts) end) == "cannot read the file reason: :enoent\n"
   end
 
-  test "return erros if `--type` option points to not supported type" do
+  test "return error if `--type` option points to not supported type" do
     # given
     path = save_txs_to_tmp_file(["hash"])
     opts = opts(path, "not-supported")
@@ -91,7 +91,7 @@ defmodule MerkleRootTest do
     File.rm!(path)
   end
 
-  test "return erros if bad input file" do
+  test "return error if bad input file" do
     # given
     path = save_txs_to_tmp_file([:crypto.strong_rand_bytes(256)])
     opts = opts(path, "btc")
@@ -107,7 +107,7 @@ defmodule MerkleRootTest do
 
   defp opts(path, type), do: ["--input", path, "--type", type]
 
-  defp save_txs_to_tmp_file([tx | _] = txs) when is_map(tx) do
+  defp save_txs_to_tmp_file([%{"hash" => _} | _] = txs) do
     txs = Enum.map(txs, & &1["hash"])
     save_txs_to_tmp_file(txs)
   end
