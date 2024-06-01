@@ -46,3 +46,16 @@ INPUT_FILE_PATH=<path-to-input-file> TYPE=<type> make docker-run
 ```
 
 > NOTE: Tested on MacOS with Docker version 20.10.17, build 100c701
+
+## Preparing sample transactions input file
+
+In order to prepare a sample input file test fixtures can be used.
+
+For `btc` type one could use the following command:
+```bash
+cd <project-root>
+cat test/fixtures/btc_blocks.json | jq '.[0]' | jq .tx | jq '.[].hash' | sed 's/"//g' > sample_txs.txt
+```
+
+For `basic` type one could just use
+`<project-root>/test/fixtures/basic_txs.txt`.
