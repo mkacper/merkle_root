@@ -24,3 +24,7 @@ merkle_root-*.tar
 
 # Temporary files, for example, from tests.
 /tmp/
+
+# Artefacts
+merkle_root
+sample_txs.txt
