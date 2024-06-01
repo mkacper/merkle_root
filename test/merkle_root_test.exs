@@ -43,13 +43,21 @@ defmodule MerkleRootTest do
     File.rm!(path)
   end
 
+  # It is tricky to test "basic" case as there is no reference to the correct solution
+  # as in BTC case where the correct result is known from the chain block. There is
+  # no point in reproducing the Merkle Tree logic in tests as there is no guarantee
+  # that logic is correct. What makes sense in this case is to use property based
+  # testing approach like verifying the root is 64 bytes long hex-encoded string.
   test "calculates the merkle tree root for `basic` transations", %{basic_txs: txs} do
     # given
     path = save_txs_to_tmp_file(txs)
     opts = opts(path, "basic")
 
     # when and then
-    assert capture_io(fn -> MerkleRoot.main(opts) end) =~ "MERKLE TREE ROOT IS "
+    assert <<"MERKLE TREE ROOT IS ", root::binary-size(64), "\n">> =
+             capture_io(fn -> MerkleRoot.main(opts) end)
+
+    assert {:ok, _decoded} = Base.decode16(root, case: :lower)
 
     # cleanup
     File.rm!(path)
