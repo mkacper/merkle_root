@@ -18,6 +18,14 @@ defmodule MerkleRoot do
   The entry point function to be called from an escript or elixir script (.exs).
   Requires passing command line arguments in the form of `["arg1", "val1"]`.
   See moduledoc for supported arguments.
+
+  Example usage:
+
+  ```
+  iex> MerkleRoot.main(["--input", "sample_txs.txs", "--type", "btc"])
+  MERKLE TREE ROOT IS 414a0fd551335d14b543c685fa7d3edac15579dac578218bf0253b36724e35d0
+  :ok
+  ```
   """
   def main(args) do
     opts = parse_options(args)
@@ -54,7 +62,7 @@ defmodule MerkleRoot do
   defp root_btc(txs),
     do:
       calculate_root(txs, _level_hashes = [], _height = 0,
-        hash_fun: &dhash(&1),
+        hash_fun: &double_hash(&1),
         reverse_byte_order?: true
       )
 
@@ -67,18 +75,27 @@ defmodule MerkleRoot do
         reverse_byte_order?: false
       )
 
+  # single hash left in a level - the root is reached
   defp calculate_root([], [root], _height, opts),
     do: root |> maybe_reverse_bytes(opts) |> encode_hex()
 
+  # no hashes left - next level is calculated
   defp calculate_root([], hashes, height, opts) do
     hashes
     |> Enum.reverse()
     |> calculate_root([], height + 1, opts)
   end
 
+  # single hash left - should be hashed with itself
   defp calculate_root([h1], hashes, height, opts),
     do: calculate_root([h1, h1], hashes, height, opts)
 
+  # for "the most bottom" level hex decoding should happen
+  # additionaly, for BTC bytes should be reversed
+  #
+  # NOTE: These operations could be performed in the higher level `root/2`
+  # function depending on `type` but it would require additional iteration over
+  # list of hashes hence doing it here to avoid that extra cost.
   defp calculate_root([h1 | [h2 | rest]], hashes, height = 0, opts) do
     h1_bin = h1 |> decode_hex() |> maybe_reverse_bytes(opts)
     h2_bin = h2 |> decode_hex() |> maybe_reverse_bytes(opts)
@@ -116,7 +133,7 @@ defmodule MerkleRoot do
     |> :binary.list_to_bin()
   end
 
-  defp dhash(bin), do: bin |> hash() |> hash()
+  defp double_hash(bin), do: bin |> hash() |> hash()
 
   defp hash(bin), do: :crypto.hash(:sha256, bin)
 end
