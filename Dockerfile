@@ -34,8 +34,7 @@ RUN mix compile
 
 RUN mix escript.build
 
-# start a new build stage so that the final image will only contain
-# the compiled release and other runtime necessities
+# start a new build stage
 FROM ${RUNNER_IMAGE}
 
 RUN apt-get update -y && \
@@ -57,7 +56,7 @@ ENV MIX_ENV="prod"
 ENV TXS_FILE_PATH="/app/txs"
 ENV TYPE="btc"
 
-# Only copy the final release from the build stage
+# Only copy the final escript from the build stage
 COPY --from=builder --chown=nobody:root /app/merkle_root ./merkle_root
 RUN chmod +x merkle_root
 
