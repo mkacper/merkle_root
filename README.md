@@ -8,7 +8,7 @@ Available flags:
   hex-encoded hashes of transactions, one per line.
   - `--type` - optional; default `btc`; type of blockchain for which the Merkle
   Tree root should be calculated, supported options are `btc` or `basic`.
-    * For `btc` type transaction hashes bytes are reverted and double sha256 hashing
+    * For `btc` type transaction hashes bytes are reversed and double sha256 hashing
   is used.
     * For `basic` type no bytes reversion is applied and single sha256 hashing is used.
 

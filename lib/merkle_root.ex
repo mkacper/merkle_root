@@ -8,7 +8,7 @@ defmodule MerkleRoot do
   - `--type` - optional; default `btc`; type of blockchain for which the Merkle
   Tree root should be calculated, supported options are `btc` or `basic`.
 
-  For `btc` type transaction hashes bytes are reverted and double sha256 hashing
+  For `btc` type transaction hashes bytes are reversed and double sha256 hashing
   is used.
 
   For `basic` type no bytes reversion is applied and single sha256 hashing is used.
@@ -150,6 +150,8 @@ defmodule MerkleRoot do
   defp parse_error({:cannot_read_file, reason}),
     do: "cannot read the file reason: #{inspect(reason)}"
 
-  defp parse_error({:type_not_supported, type}), do: "`--type` option does not support `#{type}` value"
+  defp parse_error({:type_not_supported, type}),
+    do: "`--type` option does not support `#{type}` value"
+
   defp parse_error({:unexpected, reason}), do: "unexpected error reason: #{inspect(reason)}"
 end
