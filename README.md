@@ -65,7 +65,7 @@ as there are active Erlang schedulers on the machine. Each batch could then be
 handled by a separate Erlang process. However, this approach has tradeoffs,
 such as spawning new processes, gathering results, and preparing batches of data
 (if transactions are stored in a list, calculating its length and accessing arbitrary
-subsets of elements is not efficient since it is a linked list).
+subsets of elements is not efficient since it is a linked list underneath).
 
 For memory optimization, processing one batch of transactions at a time could
 be used. This solution also has a cost, as figuring out the batches might take
