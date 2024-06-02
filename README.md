@@ -8,11 +8,9 @@ Available flags:
   hex-encoded hashes of transactions, one per line.
   - `--type` - optional; default `btc`; type of blockchain for which the Merkle
   Tree root should be calculated, supported options are `btc` or `basic`.
-
-For `btc` type transaction hashes bytes are reverted and double sha256 hashing
-is used.
-
-For `basic` type no bytes reversion is applied and single sha256 hashing is used.
+    * For `btc` type transaction hashes bytes are reverted and double sha256 hashing
+  is used.
+    * For `basic` type no bytes reversion is applied and single sha256 hashing is used.
 
 ## Requirements
 
@@ -21,8 +19,7 @@ For `basic` type no bytes reversion is applied and single sha256 hashing is used
 
 ## Running using `escript`
 
-This method requires meeting requirements regarding having Erlang and
-Elixir installed.
+This method requires having Erlang and Elixir installed.
 
 Run the following commands:
 
@@ -59,3 +56,18 @@ cat test/fixtures/btc_blocks.json | jq '.[0]' | jq .tx | jq '.[].hash' | sed 's/
 
 For `basic` type one could just use
 `<project-root>/test/fixtures/basic_txs.txt`.
+
+## Potential optimizations
+
+Regarding potential optimizations, the calculations could be performed in batches
+concurrently. For example, transaction hashes could be split into as many parts
+as there are active Erlang schedulers on the machine. Each batch could then be
+handled by a separate Erlang process. However, this approach has tradeoffs,
+such as spawning new processes, gathering results, and preparing batches of data
+(if transactions are stored in a list, calculating its length and accessing arbitrary
+subsets of elements is not efficient since it is a linked list).
+
+For memory optimization, processing one batch of transactions at a time could
+be used. This solution also has a cost, as figuring out the batches might take
+time and resources. There is no ultimate solution; it all depends on the particular
+use case.
