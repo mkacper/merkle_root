@@ -30,32 +30,29 @@ defmodule MerkleRoot do
   def main(args) do
     opts = parse_options(args)
 
-    with {:input, input} when not is_nil(input) <- {:input, Keyword.get(opts, :input)},
-         {:type, type} <- {:type, Keyword.get(opts, :type, "btc")},
-         {:file, {:ok, txs}} <- {:file, read_txs_from_file(input)},
-         {:ok, root} <- root(txs, type) do
-      IO.puts("MERKLE TREE ROOT IS #{root}")
+    with {:ok, input} <- get_opt(opts, :input),
+         {:ok, type} <- get_opt(opts, :type, "btc"),
+         {:ok, txs} <- read_txs_from_file(input),
+         {:ok, root} <- root(txs, type),
+         :ok <- IO.puts("MERKLE TREE ROOT IS #{root}") do
+      :ok
     else
-      {:input, nil} ->
-        IO.puts("`--input` option is missing")
-
-      {:file, {:error, reason}} ->
-        IO.puts("cannot read the file reason: #{inspect(reason)}")
-
-      {:error, :not_supported} ->
-        IO.puts("blockchain type not supported")
+      {:error, reason} ->
+        msg = parse_error(reason)
+        IO.puts(msg)
     end
   rescue
     error ->
       reason = Exception.format(:error, error, __STACKTRACE__)
-      IO.puts("unexpected error reason: #{inspect(reason)}")
+      msg = parse_error({:unexpected, reason})
+      IO.puts(msg)
   end
 
   # Internals
 
   defp root(txs, "btc"), do: {:ok, root_btc(txs)}
   defp root(txs, "basic"), do: {:ok, root_basic(txs)}
-  defp root(_txs, _type), do: {:error, :not_supported}
+  defp root(_txs, type), do: {:error, {:type_not_supported, type}}
 
   defp root_btc([tx]), do: tx
 
@@ -112,9 +109,20 @@ defmodule MerkleRoot do
     opts
   end
 
+  defp get_opt(options, opt, default \\ nil) do
+    case Keyword.get(options, opt, default) do
+      nil -> {:error, {:option_not_found, opt}}
+      opt -> {:ok, opt}
+    end
+  end
+
   defp read_txs_from_file(path) do
-    with {:ok, blob} <- File.read(path) do
-      {:ok, String.split(blob)}
+    case File.read(path) do
+      {:ok, blob} ->
+        {:ok, String.split(blob)}
+
+      {:error, reason} ->
+        {:error, {:cannot_read_file, reason}}
     end
   end
 
@@ -136,4 +144,12 @@ defmodule MerkleRoot do
   defp double_hash(bin), do: bin |> hash() |> hash()
 
   defp hash(bin), do: :crypto.hash(:sha256, bin)
+
+  defp parse_error({:option_not_found, :input}), do: "`--input` option is missing"
+
+  defp parse_error({:cannot_read_file, reason}),
+    do: "cannot read the file reason: #{inspect(reason)}"
+
+  defp parse_error({:type_not_supported, type}), do: "`--type` option does not support `#{type}` value"
+  defp parse_error({:unexpected, reason}), do: "unexpected error reason: #{inspect(reason)}"
 end

@@ -91,7 +91,8 @@ defmodule MerkleRootTest do
     opts = opts(path, "not-supported")
 
     # when and then
-    assert capture_io(fn -> MerkleRoot.main(opts) end) == "blockchain type not supported\n"
+    assert capture_io(fn -> MerkleRoot.main(opts) end) ==
+             "`--type` option does not support `not-supported` value\n"
   end
 
   test "return error if bad input file", %{tmp_dir: tmp_dir} do
