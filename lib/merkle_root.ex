@@ -90,8 +90,8 @@ defmodule MerkleRoot do
   # for "the most bottom" level hex decoding should happen
   # additionaly, for BTC bytes should be reversed
   #
-  # NOTE: These operations could be performed in the higher level `root/2`
-  # function depending on `type` but it would require additional iteration over
+  # NOTE: These operations could be performed in the higher level `root_btc/1`
+  # or `root_basic/1` functions but it would require additional iteration over
   # list of hashes hence doing it here to avoid that extra cost.
   defp calculate_root([h1 | [h2 | rest]], hashes, height = 0, opts) do
     h1_bin = h1 |> decode_hex() |> maybe_reverse_bytes(opts)
